@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>Reasonix</title>
 <style>
 :root{
@@ -42,6 +42,11 @@ body{
   padding:6px 8px;border-radius:6px;line-height:1;
 }
 #new-chat-btn:active{background:var(--border)}
+#settings-btn{
+  background:none;border:none;color:var(--text-muted);font-size:1rem;cursor:pointer;
+  padding:6px;border-radius:6px;line-height:1;
+}
+#settings-btn:active{background:var(--border)}
 
 /* ── Sidebar Drawer ── */
 #overlay{
@@ -209,16 +214,17 @@ body{
 }
 #scroll-bottom.show{display:flex}
 
+/* ── Main Column (base: mobile, MUST have flex for scrolling) ── */
+#main-col{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;overflow:hidden}
+
 /* ── Responsive ── */
 @media(min-width:768px){
-  #sidebar{position:relative;transform:none;width:280px}
+  #sidebar{position:relative;transform:none;width:280px;flex-shrink:0}
   #overlay{display:none!important}
   #menu-btn{display:none}
   #sidebar-close{display:none}
   body{flex-direction:row}
-  #sidebar{flex-shrink:0}
   #sidebar-header h2{font-size:.85rem}
-  #main-col{flex:1;display:flex;flex-direction:column;min-width:0}
   #header{padding:10px 16px}
   #header-title{font-size:.9rem}
 }
@@ -230,10 +236,11 @@ body{
 <div id="settings-modal">
   <div id="settings-box">
     <h2>🔑 设置 API Key</h2>
-    <p>输入你的 DeepSeek API Key。Key 只存在你手机本地，不会上传到任何服务器。</p>
+    <p>Key 只存在你手机本地，不会上传到任何服务器。关掉页面再打开还在。</p>
+    <p id="settings-status" style="color:var(--green);display:none;font-weight:600">✅ 已有 Key（已保存）</p>
     <label>DeepSeek API Key</label>
     <input type="password" id="api-key-input" placeholder="sk-...">
-    <button id="settings-save">开始对话</button>
+    <button id="settings-save">保存</button>
   </div>
 </div>
 
@@ -252,6 +259,7 @@ body{
   <div id="header">
     <button id="menu-btn">☰</button>
     <span id="header-title">Reasonix</span>
+    <button id="settings-btn" title="设置">⚙</button>
     <button id="new-chat-btn">+</button>
   </div>
 
@@ -671,6 +679,12 @@ function escHtml(s){
 function showSettings(){
   document.getElementById('settings-modal').classList.remove('hidden');
   document.getElementById('api-key-input').value = state.apiKey;
+  const statusEl = document.getElementById('settings-status');
+  if(state.apiKey){
+    statusEl.style.display = 'block';
+  }else{
+    statusEl.style.display = 'none';
+  }
   document.getElementById('api-key-input').focus();
 }
 
@@ -684,14 +698,21 @@ document.getElementById('settings-save').addEventListener('click',()=>{
   if(!key.startsWith('sk-')){ alert('API Key 应该以 sk- 开头'); return; }
   state.apiKey = key;
   saveState();
+  // Update status
+  const statusEl = document.getElementById('settings-status');
+  statusEl.style.display = 'block';
+  statusEl.textContent = '✅ 已保存！';
+  setTimeout(()=>{ statusEl.textContent = '✅ 已有 Key（已保存）'; }, 1500);
   hideSettings();
-  // Auto-create first conversation
   if(state.conversations.length === 0){ createConv(); renderAll(); }
 });
 
 // ═══════════════════════════════════════
 //  EVENT HANDLERS
 // ═══════════════════════════════════════
+
+// ── Settings Button ──
+document.getElementById('settings-btn').addEventListener('click',showSettings);
 
 // ── Sidebar ──
 document.getElementById('menu-btn').addEventListener('click',()=>{
@@ -779,17 +800,19 @@ document.getElementById('header-title').addEventListener('dblclick',showSettings
 // ═══════════════════════════════════════
 loadState();
 
-if(!state.apiKey){
-  showSettings();
-  // Don't block — user can explore UI, just can't send
-}
-
-if(state.conversations.length === 0 && state.apiKey){
+// Always create a conv if none exists (don't force settings if key is missing)
+if(state.conversations.length === 0){
   createConv();
 }
 
 renderAll();
 if(getActiveConv()?.messages.length > 0) scrollToBottom();
+
+// Show settings only on very first visit (no key AND no conversations with messages)
+const hasHistory = state.conversations.some(c => c.messages.length > 0);
+if(!state.apiKey && !hasHistory){
+  showSettings();
+}
 </script>
 </body>
 </html>
