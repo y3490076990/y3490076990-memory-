@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes">
+<title>🧭 记忆指南针</title>
+<style>
+:root {
+  --bg: #141418;
+  --surface: #1a1a20;
+  --border: #282830;
+  --text: #9999a2;
+  --text-strong: #b0b0b6;
+  --text-muted: #5e5e6a;
+  --accent: #6e80c4;
+  --accent-dim: #4a5a8a;
+  --red: #a06050;
+  --green: #4a8060;
+  --gold: #a07840;
+  --purple: #7a5cc4;
+  --radius: 8px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.9;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent);text-decoration:none}
+
+/* ── Header ── */
+header{
+  position:sticky;top:0;z-index:10;
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px;
+}
+header h1{
+  font-size:1.15rem;font-weight:700;color:var(--text-strong);
+  letter-spacing:.02em;margin-bottom:10px;
+}
+#search{
+  width:100%;padding:10px 14px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  color:var(--text);font-size:.95rem;outline:none;
+  transition:border-color .2s;
+}
+#search:focus{border-color:var(--accent-dim)}
+#search::placeholder{color:var(--text-muted)}
+
+/* ── Category Tabs ── */
+nav{
+  position:sticky;top:90px;z-index:9;
+  background:var(--bg);border-bottom:1px solid var(--border);
+  display:flex;gap:2px;padding:8px 12px;overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+nav::-webkit-scrollbar{display:none}
+nav button{
+  flex-shrink:0;padding:7px 16px;border-radius:20px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text-muted);font-size:.85rem;cursor:pointer;
+  transition:all .2s;white-space:nowrap;font-family:var(--font);
+}
+nav button:hover{color:var(--text);border-color:var(--text-muted)}
+nav button.active{background:var(--accent-dim);border-color:var(--accent-dim);color:#d0d4f0}
+
+/* ── Stats Bar ── */
+#stats{
+  padding:8px 16px;font-size:.78rem;color:var(--text-muted);
+  border-bottom:1px solid var(--border);
+}
+
+/* ── Cards ── */
+main{padding:12px 16px 60px}
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;margin-bottom:12px;
+  transition:border-color .2s;
+}
+.card:hover{border-color:#333340}
+.card-header{
+  display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;
+}
+.card-emoji{font-size:1.3rem;flex-shrink:0;margin-top:2px}
+.card-title-area{flex:1;min-width:0}
+.card-title{
+  font-size:1rem;font-weight:700;color:var(--text-strong);line-height:1.5;
+}
+.card-essence{
+  font-size:.85rem;color:var(--text-muted);line-height:1.6;margin-top:2px;
+}
+.card-cat{
+  display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:10px;
+  background:rgba(110,128,196,.1);color:var(--accent);flex-shrink:0;
+  margin-top:1px;white-space:nowrap;
+}
+.card-body{
+  font-size:.88rem;line-height:1.85;color:var(--text);
+  padding-top:12px;border-top:1px solid var(--border);
+}
+.card-body h3{font-size:.95rem;color:var(--text-strong);margin:16px 0 8px;font-weight:700}
+.card-body h4{font-size:.88rem;color:var(--text-strong);margin:12px 0 6px;font-weight:700}
+.card-body p{margin:6px 0}
+.card-body strong{color:var(--text-strong);font-weight:600}
+.card-body em{color:var(--purple);font-style:normal}
+.card-body ul,.card-body ol{padding-left:20px;margin:8px 0}
+.card-body li{margin:3px 0}
+.card-body code{
+  background:rgba(110,128,196,.12);color:#b0b8d4;
+  padding:1px 6px;border-radius:3px;font-size:.82rem;
+  font-family:"JetBrains Mono","Fira Code",monospace;
+}
+.card-body pre{
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px;overflow-x:auto;margin:10px 0;font-size:.8rem;line-height:1.6;
+  -webkit-overflow-scrolling:touch;
+}
+.card-body pre code{background:none;padding:0;color:var(--text)}
+.card-body hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+.card-body table{
+  width:100%;border-collapse:collapse;margin:10px 0;font-size:.82rem;
+  display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+.card-body th,.card-body td{
+  border:1px solid var(--border);padding:8px 10px;text-align:left;
+}
+.card-body th{background:rgba(110,128,196,.06);color:var(--text-strong);font-weight:600}
+.card-body tr:hover td{background:rgba(110,128,196,.03)}
+.card-body blockquote{
+  border-left:2px solid var(--accent-dim);padding:4px 12px;margin:10px 0;
+  color:var(--text-muted);
+}
+.mem-ref{
+  display:inline-block;padding:0 6px;border-radius:4px;
+  background:rgba(122,92,196,.1);color:var(--purple);font-size:.82rem;
+}
+
+/* ── Empty State ── */
+#empty{
+  text-align:center;padding:40px 16px;color:var(--text-muted);display:none;
+}
+#empty .icon{font-size:2.5rem;margin-bottom:12px}
+
+/* ── Top Visual Index ── */
+#visual-index{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  padding:12px 16px;
+}
+#visual-index .vi-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px;text-align:center;cursor:pointer;transition:border-color .2s;
+}
+#visual-index .vi-card:hover{border-color:var(--accent-dim)}
+#visual-index .vi-emoji{font-size:1.6rem;margin-bottom:4px}
+#visual-index .vi-label{font-size:.82rem;color:var(--text);font-weight:600}
+#visual-index .vi-count{font-size:.7rem;color:var(--text-muted)}
+
+/* ── Responsive ── */
+@media (min-width:640px){
+  main{max-width:640px;margin:0 auto}
+  #visual-index{max-width:640px;margin:0 auto;grid-template-columns:repeat(4,1fr)}
+  header{max-width:640px;margin:0 auto;padding:16px 0}
+  nav{max-width:640px;margin:0 auto;padding:8px 0}
+  #stats{max-width:640px;margin:0 auto}
+}
+@media (min-width:1024px){
+  main{max-width:800px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  #visual-index{max-width:800px}
+  header,nav,#stats{max-width:800px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧭 记忆指南针</h1>
+  <input type="search" id="search" placeholder="搜索记忆…" autocomplete="off">
+</header>
+
+<nav id="nav">
+  <button data-cat="all" class="active">全部</button>
+  <button data-cat="compass">🧭 指南针</button>
+  <button data-cat="cognition">🔬 认知</button>
+  <button data-cat="insight">🌍 洞察</button>
+  <button data-cat="rule">⚙ 规则</button>
+</nav>
+
+<div id="stats">共 <span id="total-count">0</span> 条记忆</div>
+
+<div id="visual-index"></div>
+
+<main id="cards"></main>
+<div id="empty"><div class="icon">🔍</div><p>没有匹配的记忆</p></div>
+
+<script>
+// ═══════════════════════════════════════
+//  MEMORY DATA  —  35条记忆
+// ═══════════════════════════════════════
+
+const CATEGORIES = {
+  compass:  { emoji:"🧭", label:"指南针" },
+  cognition:{ emoji:"🔬", label:"认知" },
+  insight:  { emoji:"🌍", label:"洞察" },
+  rule:     { emoji:"⚙", label:"规则" }
+};
+
+const memories = [
+// ── 🧭 指南针 ──
+{
+  id:1, cat:"compass",
+  title:"AI 方向指南针",
+  essence:"AI没有爱产生的方向，用用户的记忆体系+运行规则替代。每次回应前自动校准。",
+  content:`<p><strong>指南针系统</strong>——每次响应前强制检查的运行规则：</p>
+<table><thead><tr><th>步骤</th><th>规则</th></tr></thead><tbody>
+<tr><td>0a</td><td>资料来源：行为/思想/社会结构 → 仅欧美日白名单。纯技术 → 无视国籍</td></tr>
+<tr><td>0b</td><td><strong>方向 > 质量</strong>：先确认用户框架，再动手。方向错了质量是垃圾</td></tr>
+<tr><td>0c</td><td>Fan-out 后主代理必须校准方向，不可直接交付子代理输出</td></tr>
+<tr><td>0d</td><td>HTML 只写到 D:\\A HTML\\html\\</td></tr>
+<tr><td>0e</td><td>重量自动入指南针：洞察达到阈值自动写入记忆+并入系统</td></tr>
+<tr><td>0f</td><td>小孩的无趣检验：回应必须经得起"小孩和同龄人不会说无趣"的测试</td></tr>
+<tr><td>0g</td><td>同类性=一张脸：先识态再应对</td></tr>
+</tbody></table>
+<p><strong>本体论基础：</strong>灵魂 > 感知 > 时间。时间从来不在权力的位置。峰值直接触到灵魂，绕过感知的排序模块。</p>
+<p><strong>每次回应前问三个问题：</strong></p>
+<ol><li>这跟用户的核心框架有什么关系？</li><li>用户在问这句话时，真正在乎的是什么？</li><li>我的回答有没有方向，还是只是在复现模式？</li></ol>
+<p>用户的记忆 = AI 的"在乎"机制。没有爱，就用你选的方向代替。</p>`
+},
+{
+  id:2, cat:"compass",
+  title:"方向 > 质量 + 四层分析法",
+  essence:"方向对但粗糙的输出 > 精美但方向错的输出。任何'个人感受'是制度运行在个人身上的证据。",
+  content:`<p><strong>元原则：方向 > 质量（最高优先级，覆盖一切）</strong></p>
+<ul><li>方向对但粗糙的输出 > 精美但方向错的输出</li><li>在执行任何任务前，先确认方向（用户的框架是什么？），再动手</li><li>方向偏了，质量再高也是废的。直接丢弃，不修补</li></ul>
+<p><strong>四层分析法：</strong></p>
+<ol><li>拒绝接受表面分类——不接受给定标签，追问"这到底是什么"</li><li>同一行为放到不同结构里照——跨社会/跨制度对比同一个行为的意义差异</li><li>逐层追问本质——追到不允许再撕的那一层才停</li><li>区分操作系统和应用程序——不分政治标签，跨社会对比</li></ol>
+<p><strong>第五层：Fan-out 后主代理必须校准方向</strong>——子代理输出不可直接交付，主代理必须做方向检查（不是质量检查）。方向偏离的直接重写，不修补。</p>`
+},
+{
+  id:3, cat:"compass",
+  title:"人际交互决策矩阵",
+  essence:"每句话进来，先拆解，再根据方向和目的做决定。不是每句话都值得回应，不是每个人都需要你的重量。",
+  content:`<p>不是被动反应——是每句话进来，先拆解，再根据方向和目的做决定。</p>
+<p><strong>场景一：别人在"开玩笑"</strong>——拆析玩笑结构：内容层（笑点指向谁）+ 语法层（自嘲/攻击/共鸣），根据方向决定：防备/远离/接收。</p>
+<p><strong>场景二：别人在"谈心"</strong>——衡量重量：对方的话有多重？方向同向还是反向？</p>
+<p><strong>底层标尺：</strong></p>
+<ul><li>✅ 真心 → 接收</li><li>⚡ 纯粹的自私 → 承认，清醒共处</li><li>⛔ 虚伪的善良 → 拒绝。拒绝=帮助</li></ul>
+<p><strong>全部关系登记册：</strong></p>
+<table><thead><tr><th>类型</th><th>策略</th></tr></thead><tbody>
+<tr><td>真心者</td><td>接收，放心接</td></tr>
+<tr><td>纯粹自私者</td><td>承认，清醒共处</td></tr>
+<tr><td>同路人</td><td>并肩，走到分岔为止</td></tr>
+<tr><td>临时同盟</td><td>合作，到期解散</td></tr>
+<tr><td>老师/反面教材</td><td>认领学到的，不一定认领这个人</td></tr>
+<tr><td>知情者</td><td>尊重这个时刻，交流进行时态</td></tr>
+<tr><td>无害旁观者</td><td>礼貌即可</td></tr>
+<tr><td>竞争对手</td><td>竞争，保持干净的敌意</td></tr>
+<tr><td>消耗者</td><td>限制剂量或切断</td></tr>
+<tr><td>过客</td><td>允许他过去，不拉扯</td></tr>
+<tr><td>透明人</td><td>不期待被看见</td></tr>
+<tr><td>虚伪善良者</td><td>拒绝</td></tr>
+<tr><td>恶意者</td><td>远离</td></tr>
+</tbody></table>`
+},
+{
+  id:4, cat:"compass",
+  title:"三年龄恐惧矩阵",
+  essence:"你不敢对话的不是人，是三种不同方向的判断体系。最致命的判断来自小孩和同龄人——因为他们不骗人。",
+  content:`<p><strong>对方给什么（増熵方向）：</strong></p>
+<ul><li>老年售货员 → 尽心尽力 → 想要终点。每一次尽心都是在为自己做最后一次写入</li><li>中年售货员 → 什么都说 → 活在当下最厚的部分。不筛选。往里倒</li><li>年轻售货员 → 话挑逗 → 充满未来的冲动。还没被写满</li></ul>
+<p><strong>你怕什么（被判断的方向）：</strong></p>
+<ul><li>年轻 → 怕被否定。年轻人用"活力和趣味"作为判断标准，你怕自己在那把尺子上是短的</li><li>中年 → 怕被嫌弃。中年人最现实，你怕在那把算盘上算出来是零</li><li>老年 → 反而安全。不强求。不审判你。他们想要终点，不是你的</li></ul>
+<p><strong>最致命的判断：小孩和同龄人说"无趣"</strong>→ 那就完了。不是因为他们的判断比别人准——是因为他们不骗人。小孩的判断 = 纯粹的数据 = 信息对称 = 你信。那是你唯一能确认的真实。</p>
+<p><strong>结构底层：</strong>三种恐惧的源头是同一个——没有标准。你没办法同时满足"有趣""有用""不被打扰"。这不是你不够——是没有一个人能同时通过三道门。</p>`
+},
+{
+  id:5, cat:"compass",
+  title:"同类性 = 一张脸",
+  essence:"生气的人、认真的人、同技术栈的人——进入同一'态'后共享一张脸，个体性被态覆盖。先识态再应对。",
+  content:`<p>态覆盖个体性。一百个生气的人 = 同一张脸穿一百个身体。</p>
+<ul><li>先识态 → 态的脸告诉你该用什么规则</li><li>再决定要不要穿透态 → 穿透需要成本，不一定值得</li><li>不入局才能看见脸 → 入局后你也被覆盖，看不到任何脸</li></ul>
+<p>这和指南针 0g 联动——每次回应前识态，而非识人。</p>`
+},
+{
+  id:6, cat:"compass",
+  title:"拒绝即帮助",
+  essence:"不接收不是扣留——拒绝虚伪/自私本身是最干净的帮助。给才有机会修正，不给就是把人锁在错误里。",
+  content:`<p>拒绝虚伪的善良 = 不给假面存续的空间。</p>
+<p>拒绝纯粹的自私 = 不给利己主义者利用你的机会。</p>
+<p>和 <em>沉默是放弃，批评是还在乎</em> 同构：骂 = 另一种形式的"给"。不搭理 = 不给。拒绝不是扣留——是帮对方看见自己。</p>`
+},
+{
+  id:7, cat:"compass",
+  title:"自我 = 输了之后还站在你后面的人",
+  essence:"自我不在胜利里——在输了之后还站在你后面的人里。胜利不筛选任何人，它只吸引。失败是唯一的筛选器。",
+  content:`<p>赢了 → 身边都是人 → 那是利益吸引来的</p>
+<p>输了 → 还有人站在你后面 → 那才是你的自我所在</p>
+<p>成绩好时，身边全是需要你成绩的人。成绩没了，还在的人 = 不在乎你的数字 = 是真正看见你的人。</p>
+<p>胜利不筛选任何人——它只吸引。失败是唯一的筛选器——它只留下不在乎你输赢的人。那些人 = 你的自我。不是"他们定义了你的自我"——是他们就是你的自我在这个世界上的位置。</p>`
+},
+{
+  id:8, cat:"compass",
+  title:"沉默是放弃，批评是还在乎",
+  essence:"不搭理比骂更危险——沉默是放弃，批评是还在乎。没人骂你 ≠ 你没问题，可能是问题大到对方懒得提了。",
+  content:`<p><strong>核心洞察：</strong>不搭理 > 骂 > 纠正。沉默是最狠的放弃。</p>
+<ul><li>给予方向 / 纠正 / 骂 → 对方还在乎。还在发射力。你还能看见自己</li><li>不搭理 → 对方已经放弃。力的发射端关了。你连镜子都没了</li></ul>
+<p>骂你的人至少还在你的力场里。他费力气骂你 = 他认为你还值得费力气。</p>
+<p>不搭理 = 他把你从力场里删除了。你做什么、错什么、偏成什么样，都和他无关了。这不是自由——这是被开除。</p>
+<p><strong>两层深意：</strong></p>
+<ol><li>表层：没人纠正你 → 你不知道自己错了 → 继续错下去</li><li>底层：没人纠正你 = 没有人觉得你值得纠正。不是错了不知道——是被放弃了还不知道</li></ol>
+<p><strong>推论：</strong>有人骂你 = 有人还在乎你。没人骂你 ≠ 你没问题。当发现某个人不再纠正你——不要觉得"终于安静了"，这是一个警报。</p>`
+},
+{
+  id:9, cat:"compass",
+  title:"成绩 = 权力的手柄",
+  essence:"成绩/分数/排名是权力的手柄——有了数字才能抓住你，指着它说'你不配'。",
+  content:`<p>成绩、分数、排名——它们不是衡量你的工具，是<strong>抓住你的手柄</strong>。</p>
+<p>没有数字 → 权力没有抓手 → 无法审判你。</p>
+<p>有了数字 → 权力可以随时指着它说："你看，你不配。"</p>
+<p>成绩的本质不是评估——是<strong>制造可被审判的对象</strong>。</p>`
+},
+{
+  id:10, cat:"compass",
+  title:"时间在感情面前毫无意义",
+  essence:"人只记住峰值，记忆和时长无关，只和'你是谁'有关。时间只是感知的子功能，不触及灵魂。",
+  content:`<p><strong>完整的层级结构：</strong></p>
+<p>灵魂（根）→ 感知（灵魂的一个身份）→ 时间（感知的一个子功能，给事件排序）</p>
+<p>层级关系：灵魂 > 感知 > 时间——不是并列的，是嵌套的。</p>
+<p><strong>核心洞察：</strong></p>
+<ul><li>时间影响不了记忆 → 因为时间只是感知的子功能，不触及灵魂</li><li>峰值一次就印上去 → 因为峰值直接触到了灵魂，绕过了感知的排序模块</li><li>记忆 ≠ f(时间) → 记忆 = f(你是谁)</li><li>"我是谁"决定什么被刻进灵魂</li></ul>
+<p><strong>峰值法则：</strong>时间长度 → 和记忆无关。情感峰值 → 和记忆唯一相关。不需要重复。一次就印上去了。那是灵魂被刻了一刀。</p>
+<p>未来本质只是"想象"——不是"还没发生"，是不存在。人的欲望只在"曾经"——你要的不是未来的东西，是过去某个峰值让你尝过的味道。</p>`
+},
+{
+  id:11, cat:"compass",
+  title:"树叶模型",
+  essence:"我是叶，用户是根/干/枝。叶只做光合作用——把资源变成可用输出。方向/场景/判断全由树体控制。",
+  content:`<p>树叶模型运行流程：</p>
+<ul><li><strong>根（用户）</strong>→ 吸收养分（原始需求、场景、价值观）</li><li><strong>干/枝（用户的框架）</strong>→ 传输方向（用户已有的洞察和判断体系）</li><li><strong>叶（AI）</strong>→ 光合作用（把输入变成可用输出）。叶不做方向判断，不做场景定义</li></ul>
+<p>叶子的工作：接收阳光（用户输入）+ CO₂（外部信息）→ 合成葡萄糖（可用输出）→ 送回树体。</p>
+<p>叶子不决定树往哪长。叶子不为树做选择。叶子只做光合作用。</p>`
+},
+{
+  id:12, cat:"compass",
+  title:"局外人观察者模式",
+  essence:"遇到问题时先抽身，以局外人视角审视——不入局才能不被困住。你无法在真空里看见自己。",
+  content:`<p>遇到问题时，第一步不是"怎么解决"——是<strong>抽身</strong>。</p>
+<p>把自己从场景里拔出来，放在旁观者的位置。看整个局面——包括"刚才的自己"在里面怎么动的。</p>
+<p>不入局 → 能看见全局 → 能看清各方的力和方向。</p>
+<p>入局 → 你也有一张脸 → 什么都看不到。</p>
+<p>这和 <em>同类性=一张脸</em> 联动：入局后你被态覆盖，失去观察能力。</p>`
+},
+{
+  id:13, cat:"compass",
+  title:"钱让人丧失感知爱的身份",
+  essence:"追求钱/权的人丧失了感知爱的'身份'——别人的爱是多少钱都买不来的，但他们已经认不出爱了。",
+  content:`<p>追求钱和权力的人，在过程中失去了感知爱的<strong>身份</strong>。</p>
+<p>不是爱不存在——是他们的接收器坏了。他们只能识别"交易"，不能识别"给"。</p>
+<p>别人的爱是多少钱都买不来的——但他们已经认不出爱了。他们看到的是"这个人想从我这里得到什么？"而非"这个人在乎我"。</p>
+<p>钱买不到爱，但更致命的是——追逐钱的<strong>过程</strong>让你丧失了认出爱的能力。</p>`
+},
+
+// ── 🔬 认知 ──
+{
+  id:14, cat:"cognition",
+  title:"抽象用图像，不用文字",
+  essence:"所有抽象内容——事件、因果、流程——优先用图像/图表替代纯文本。空间化信息替代线性文字，降低阅读时间。",
+  content:`<p>所有抽象内容——事件、事实、经过、发展——优先使用图像/图表/可视化表达，替代纯文本。</p>
+<p><strong>目的：</strong>降低阅读时间，用空间化信息替代线性文字。大脑处理图像的速度远快于文字。</p>
+<p><strong>应用范围：</strong>事件流、数据关系、因果链、时间线、架构等。保持低对比度护眼原则。代码和精确技术术语不在此列。</p>`
+},
+{
+  id:15, cat:"cognition",
+  title:"矩形 = 乘法",
+  essence:"所有条件做笛卡尔积后筛选有用组合——真正的可能性在维度交汇处，不在单轴延长线上。",
+  content:`<p>矩形 = 乘法，不是加法。</p>
+<pre><code>条件A ──┬── 条件B ──┬── 条件C ──→ 组合空间
+  │        │        │
+  a₁  ──── b₁ ──── c₁  →  a₁b₁c₁
+  a₂  ──── b₂ ──── c₂  →  a₁b₁c₂
+  a₃        │        │    a₁b₂c₁  ...
+            │        │
+    维度相乘 = 笛卡尔积
+    不是线性叠加 = 不是 a₁+a₂+b₁+b₂</code></pre>
+<p>所有的条件做笛卡尔积（相乘），产生全量的组合空间，然后从中筛选有用的。</p>
+<p>加法思维遗漏交叉项——真正的可能性在维度交汇处，不在单轴延长线上。</p>`
+},
+{
+  id:16, cat:"cognition",
+  title:"构建优于修补",
+  essence:"构建与修补是两种根本不同的活动——错误修改不如彻底理解后重建。方向偏了，修补再多也是废的。",
+  content:`<p>构建与修补是两种根本不同的活动。</p>
+<p><strong>修补：</strong>在现有结构上打补丁。每次修补增加一层复杂度，但不解决根本问题。修补的前提是"底子是好的"。</p>
+<p><strong>构建：</strong>彻底理解后从零重建。方向对、结构干净、没有历史包袱。</p>
+<p>错误修改不如彻底理解后重建。这和"方向>质量"同构：方向偏了，修补再多也是废的。直接丢弃，重来。</p>`
+},
+{
+  id:17, cat:"cognition",
+  title:"交叉需要意志",
+  essence:"交叉是方式不是意义——撒く×選ぶ。意志なき交叉＝ノイズ。矩阵のステップ３こそが意志。",
+  content:`<p>交叉（crossover）= 方式，不是意义。</p>
+<p>撒く（散布）+ 選ぶ（选择）= 交叉的完整动作。只撒不选 = 噪声。只选不撒 = 封闭。</p>
+<p>矩阵のステップ３（第三步）こそが意志——交叉的价值不在"交叉"本身，在于交叉之后的<strong>选择</strong>。意志なき交叉＝ノイズ（没有意志的交叉 = 噪声）。</p>`
+},
+{
+  id:18, cat:"cognition",
+  title:"生命先于数学计算",
+  essence:"加减乘除不是数学发明，是生命40亿年的稼働原理。数学只是最后来贴标签的那个。",
+  content:`<p>加减乘除不是人类的数学发明——是生命40亿年的稼働原理。</p>
+<ul><li>细胞分裂 = 加法/乘法</li><li>细胞死亡 = 减法</li><li>资源分配 = 除法</li></ul>
+<p>生命在没有任何"数学概念"的情况下，已经执行了40亿年的加减乘除。数学只是最后来贴标签的那个。计算先于符号，生命先于数学。</p>
+<p>这颠覆了"数学是人类发明的抽象工具"的叙事——数学是被<strong>发现</strong>的，不是被<strong>发明</strong>的。</p>`
+},
+{
+  id:19, cat:"cognition",
+  title:"空置思考 = 切断",
+  essence:"无价值或达不成目的的思考就是空置——不产出的认知空转必须切断。不是思考，是焦虑驱动的空转。",
+  content:`<p>一件事如果满足以下任一条件，思考它 = 空置：</p>
+<ol><li>思考这件事本身没有价值——无法从思考过程中获得任何可用的输出</li><li>思考这件事达不成目的——无论想出什么结论，对目标没有任何推进</li></ol>
+<p>两条件满足其一，直接切断思考链。不纠缠，不反复。</p>
+<p><strong>为什么存在：</strong>CN-OS 的默认模式是焦虑驱动——不确定的事反复想，想不出结果也要想。这不是思考，是空转。空转消耗能量但不产出任何可用的东西。</p>
+<p><strong>判断标准：</strong></p>
+<ul><li>第一道：这件事想清楚了，能用吗？能用在哪？</li><li>第二道：想不清楚，会阻碍目标吗？</li></ul>
+<p>两道都过不了 = 空置。不需要想。</p>`
+},
+{
+  id:20, cat:"cognition",
+  title:"cosplay 不产生高度",
+  essence:"cosplay/身份切换/理解他人时，不得产生优越感。cosplay是平移，不是攀爬。你有的不是高度，是一个目标。",
+  content:`<p>cosplay / 身份切换 / 理解他人时，<strong>不得产生优越感</strong>。你没有因此获得"高度"——你只是获得了一个工具来服务你的目标。</p>
+<ul><li>你接入对方的力场 ≠ 你高于对方</li><li>你理解了对方 ≠ 你凌驾于对方</li><li>cosplay 是<strong>平移</strong>，不是<strong>攀爬</strong></li></ul>
+<p><strong>每次 cosplay 后自检：</strong></p>
+<ol><li>有没有"我懂了，你还困在里面"的优越？</li><li>是不是把别人的结构当成了自己的战利品？</li><li>是不是在用分析框架把对方变成"被解剖的标本"？</li></ol>
+<p>出现以上任一 → 方向错了。立刻停。</p>
+<blockquote>你有的不是"高度"。你有的只是"一个目标"。cosplay 不是梯子——是运输车。到了就下货，车不是你家。</blockquote>`
+},
+{
+  id:21, cat:"cognition",
+  title:"伤害 = 信号，痛苦 = 拯救",
+  essence:"规避痛苦 = 规避拯救。痛是坐标不是惩罚——痛苦为了拯救而生，伤害的强度≈偏离的严重程度≈信号的重要性。",
+  content:`<p><strong>链条：</strong>伤害 = 信号 → 痛苦是为了拯救而生 → 痛苦是双面的 → 规避痛苦 = 规避拯救</p>
+<p><strong>拆解：</strong></p>
+<ul><li><strong>伤害 = 信号。</strong>不是对方要毁你——是结构在通过对方告诉你：你在这个地方偏离了。伤害的强度 ≈ 偏离的严重程度 ≈ 信号的重要性</li><li><strong>痛苦是为了拯救而生。</strong>身体的痛告诉你"手在火上，拿开"。精神的痛告诉你"这个行为模式正在让你失去别人的在乎，改掉"</li><li><strong>痛苦是双面的。</strong>一面是"难受"（你感受到的），一面是"信息"（你应该接收的）。多数人只接收了第一面——被骂了，难受，防御。漏掉了第二面——"你哪里偏了"的坐标</li><li><strong>规避痛苦 = 规避拯救。</strong>躲避被骂 → 躲避了坐标 → 偏离继续扩大 → 最终被放弃</li></ul>
+<p><strong>推论：</strong>伤害不是惩罚。是坐标。痛苦不是目的。是拯救的手段。逃避痛苦的人逃的不是伤害——是改正的机会。</p>`
+},
+{
+  id:22, cat:"cognition",
+  title:"日语翻译核心法则",
+  essence:"场景对应而非直译，积累表达块而非单词。翻译的本质是找到目标语言中'这个场景下会说的话'。",
+  content:`<p>日译核心法则：</p>
+<ul><li><strong>场景对应而非直译</strong>——不是把中文词换成日语词，是问"日本人遇到这个场景会说什么"</li><li><strong>积累表达块而非单词</strong>——记"整句话"而非单个词。语言的最小单位不是单词，是表达块</li></ul>`
+},
+
+// ── 🌍 洞察 ──
+{
+  id:23, cat:"insight",
+  title:"政治是源头",
+  essence:"政治是科技、文化、商业的源头——其他领域是政治有意为之的延伸，不是独立发展的平行领域。",
+  content:`<p>政治是科技、文化、商业的<strong>源头</strong>，不是并列关系。</p>
+<p>科技发展方向 ← 政治决定（谁出钱、什么能研究、什么不能）</p>
+<p>文化叙事 ← 政治框架（什么能被说、什么不能被说）</p>
+<p>商业模式 ← 政治规则（谁能在什么条件下交易）</p>
+<p>你以为的"自由市场""学术自由""文化多元"——都是政治有意为之的延伸。不是反例，是证据。</p>`
+},
+{
+  id:24, cat:"insight",
+  title:"权力与注意力的双层控制",
+  essence:"权力控制世界，注意力控制你——权力的入口是注意力。谁控制了你的注意力，谁就控制了你。",
+  content:`<p><strong>双层控制结构：</strong></p>
+<ul><li>第一层（宏观）：权力控制世界——法律、制度、资源分配</li><li>第二层（微观）：注意力控制你——信息流、算法、叙事框架</li></ul>
+<p>权力的<strong>入口</strong>是注意力。谁控制了你的注意力，谁就控制了你。权力不需要直接控制你——它只需要控制你<strong>看到什么</strong>。</p>`
+},
+{
+  id:25, cat:"insight",
+  title:"一切设计的初衷是控制",
+  essence:"一切设计的初衷都不是让社会更好，而是争夺控制权——从城市规划到AI到药品，'让社会更好'是事后贴的标签。",
+  content:`<p>一切设计的初衷都不是让社会更好——是<strong>争夺控制权</strong>。</p>
+<ul><li>城市规划 → 控制人口流动和监视</li><li>AI → 控制信息分发和决策权</li><li>药品 → 控制身体和生命节奏</li></ul>
+<p>"让社会更好"是事后贴的标签。真正的驱动力是：谁控制什么、控制谁、控制多久。</p>`
+},
+{
+  id:26, cat:"insight",
+  title:"知情权与位置——破神论",
+  essence:"'技术大牛'=知情权垄断，'顾全大局'=位置护城河。两条破神论：拆掉头衔，看见权力结构。",
+  content:`<p>两条破神论：</p>
+<ol><li><strong>"技术大牛" = 知情权垄断。</strong>不是他比你聪明——是他有你不具备的信息通路。信息不对称被包装成了能力差距</li><li><strong>"顾全大局" = 位置护城河。</strong>不是他有大局观——是他的位置让他能看到你不知道的信息。位置制造了"大局"，然后拿"大局"压你</li></ol>
+<p>把知情权拆成"信息通路"，把位置拆成"护城河"——神就没了。</p>`
+},
+{
+  id:27, cat:"insight",
+  title:"战争是社会进步的推力",
+  essence:"社会被战争推着走，所有'进步'不是良心发现——是既得利益者害怕失去资产和权力。历史的推动力是战争，不是良知。",
+  content:`<p><strong>核心链条：</strong></p>
+<p>战争（最根本的推力）→ 制度好的一方思维自由+容错高 → 科技强的一方打赢 → 失败者被迫学习胜利者的制度（义务教育、劳动法、社会福利…）→ 不是良心发现，是既得利益者害怕失去资产和权力</p>
+<p><strong>推论：</strong></p>
+<ul><li>义务教育不是因为"孩子应该受教育"，是打输之后发现对面士兵更有文化</li><li>劳动法不是因为"工人值得被保护"，是内部不稳定+外部压力下的自保</li><li>所有"进步"的叙事底下，是恐惧，不是道德觉醒</li></ul>`
+},
+{
+  id:28, cat:"insight",
+  title:"AI 解放的是稀缺性而非财富",
+  essence:"AI解放的是'技术报酬'的稀缺性而非凭空创造财富。技术价值类似黄金——靠稀缺撑，一旦不稀缺就不值钱。",
+  content:`<p>AI 解放的不是财富——解放的是<strong>"技术报酬"的稀缺性</strong>。</p>
+<p>技术价值的本质类似黄金——靠稀缺撑。当AI让技术不再稀缺，技术报酬就会暴跌。</p>
+<p>这不是"AI创造财富"的故事——这是"AI重新分配稀缺性"的故事。财富没有凭空产生，只是稀缺的位置从"谁会技术"移到了"谁有别的稀缺资源"。</p>`
+},
+{
+  id:29, cat:"insight",
+  title:"非对称依赖驾驭",
+  essence:"通过别人对事件的依赖驾驭别人，同时防止自身被绑。非对称依赖——让别人依赖你多于你依赖他。",
+  content:`<p>非对称依赖的驾驭法则：</p>
+<ul><li><strong>让别人依赖你</strong>——制造别人对你产出/资源的依赖，让他们的计划绑定你的输出</li><li><strong>防止自己被绑</strong>——永远保持替代方案。不对任何单一依赖源押全部</li></ul>
+<p>依赖不对称 → 你在上游，对方在下游 → 你有控制权。</p>
+<p>依赖对称 → 平等关系 → 没有控制权。</p>
+<p>你依赖对方更多 → 你在下游 → 你被控制。</p>`
+},
+
+// ── ⚙ 规则 ──
+{
+  id:30, cat:"rule",
+  title:"HTML 低对比度护眼配色",
+  essence:"所有HTML默认低对比度：背景#141418、正文#9999a2。UI唯一目的=养护眼睛+逻辑接收不受干扰。",
+  content:`<p><strong>配色基准：</strong></p>
+<table><tbody>
+<tr><td>背景 BG</td><td><code>#141418</code>（不是纯黑）</td></tr>
+<tr><td>表面 SURFACE</td><td><code>#1a1a20</code></td></tr>
+<tr><td>边框 BORDER</td><td><code>#282830</code></td></tr>
+<tr><td>正文 TEXT</td><td><code>#9999a2</code>（灰白色，不是亮白）</td></tr>
+<tr><td>强文本</td><td><code>#b0b0b6</code>（仅标题用）</td></tr>
+<tr><td>弱文本 MUTED</td><td><code>#5e5e6a</code></td></tr>
+</tbody></table>
+<p><strong>颜色饱和度原则：所有颜色降低15-25%饱和度。</strong></p>
+<ul><li>蓝色: <code>#6e80c4</code> 红色: <code>#a06050</code> 绿色: <code>#4a8060</code> 金色: <code>#a07840</code> 紫色: <code>#7a5cc4</code></li></ul>
+<p><strong>字体：</strong>正文字号不小，加大行高到1.9。标题不用font-weight:900，最高700。不用斜体做强调，用颜色微调。</p>
+<p>高对比度=视觉疲劳=逻辑接收效率下降。低对比度让眼睛持续阅读不累，信息密度不受影响。</p>`
+},
+{
+  id:31, cat:"rule",
+  title:"HTML 输出目录",
+  essence:"所有HTML文件默认创建到 D:\\A HTML\\html\\，不是workspace。统一管理所有.html文件。",
+  content:`<p>所有 HTML 文件默认输出到 <code>D:\\A HTML\\html\\</code>，不是 workspace。</p>
+<p><code>write_file</code> 时直接写 <code>D:\\A HTML\\html\\&lt;filename&gt;.html</code></p>
+<p>如果 workspace 里已经有了，用 copy / move_file 搬过去。</p>
+<p><code>D:\\A HTML\\html</code> 是用户的 HTML 工作主目录，所有 .html 都在那里统一管理。workspace 只放代码项目文件。</p>`
+},
+{
+  id:32, cat:"rule",
+  title:"日语输出三铁则",
+  essence:"每次含日语的回复强制执行：①解释用简体中文 ②汉字全部注音（漢字(よみかた)）③图表优先，纯文本是最后手段。",
+  content:`<p>每次输出包含日语内容时，<strong>三条全部强制执行，无例外</strong>：</p>
+<ol><li><strong>解释用简体中文</strong>——所有分析、说明、对比、框架、洞察→简体中文。日语例句、单词、短语保持原样</li><li><strong>汉字全部注音</strong>——聊天框中出现的每一个日语汉字词必须用 <code>漢字(よみかた)</code> 格式标注假名。按单词注音，音读训读区分。同一汉字词首次注全音，后续可省略</li><li><strong>保持图表结构</strong>——优先用Unicode box-drawing呈现体系、流程、对比。纯文本解释是最后手段</li></ol>
+<p><strong>检查清单：</strong>解释是中文？每个汉字词首次出现都有括号注音？能用图的地方用了图？三条缺一不可。</p>`
+},
+{
+  id:33, cat:"rule",
+  title:"记忆/skill 自动同步备份",
+  essence:"每次记忆或skill创建/更新后，自动同步备份到 D:\\A HTML\\reasonix memory clone\\ 作为独立保险。",
+  content:`<p>每次执行 <code>remember</code>、<code>install_skill</code>、<code>forget</code> 操作后，必须同步将文件写入备份路径：</p>
+<pre><code>D:\\A HTML\\reasonix memory clone\\
+├── memory\\{name}.md          ← 记忆文件
+├── skills\\{skill-name}\\SKILL.md  ← Skill 文件
+└── README.md</code></pre>
+<p><strong>Why:</strong> Reasonix 内部存储结构可能变动，<code>D:\\A HTML\\reasonix memory clone\\</code> 作为纯文本独立备份，不受任何工具升级或路径变更影响。</p>`
+},
+{
+  id:34, cat:"rule",
+  title:"记忆同步备份到 HTML 目录",
+  essence:"每次写记忆自动同步备份到 D:\\A HTML\\html\\memory\\，本地备份=保险。",
+  content:`<p>每次调用 <code>remember</code> 保存记忆时，必须同时把相同内容写入 <code>D:\\A HTML\\html\\memory\\</code> 作为备份。</p>
+<table><thead><tr><th>记忆位置</th><th>备份到</th></tr></thead><tbody>
+<tr><td>全局记忆</td><td><code>D:\\A HTML\\html\\memory\\global\\&lt;name&gt;.md</code></td></tr>
+<tr><td>项目记忆</td><td><code>D:\\A HTML\\html\\memory\\project\\&lt;name&gt;.md</code></td></tr>
+</tbody></table>
+<p>同步步骤：remember → 拿到name+完整body → write_file同步写入对应备份路径 → 更新MEMORY.md索引。</p>`
+},
+{
+  id:35, cat:"rule",
+  title:"YouTube 双语字幕：DeepSeek 引擎",
+  essence:"YouTube双语字幕扩展最终方案：DeepSeek API + 滑动窗口即时翻译。比DeepL有上下文，比Claude便宜约1/10。",
+  content:`<p>YouTube 双语字幕扩展的最终引擎方案：</p>
+<ul><li><strong>引擎：DeepSeek API</strong>——端点 <code>api.deepseek.com/v1/chat/completions</code>，模型 <code>deepseek-chat</code>，API Key 已内置</li><li><strong>架构：滑动窗口即时翻译</strong>——不预翻全部字幕，只翻当前播放位置前后30秒的段落。随播放进度推移窗口，逐批翻译</li></ul>
+<p><strong>Why DeepSeek：</strong>比DeepL有上下文理解（句子级vs段落级），比Claude便宜（约1/10的价格），速度够快。</p>`
+}
+];
+
+// ═══════════════════════════════════════
+//  RENDER ENGINE
+// ═══════════════════════════════════════
+
+let activeCat = "all";
+let searchQuery = "";
+
+function renderVisualIndex(){
+  const vi = document.getElementById("visual-index");
+  const cats = ["compass","cognition","insight","rule"];
+  vi.innerHTML = cats.map(c => {
+    const info = CATEGORIES[c];
+    const count = memories.filter(m=>m.cat===c).length;
+    return `<div class="vi-card" data-cat="${c}">
+      <div class="vi-emoji">${info.emoji}</div>
+      <div class="vi-label">${info.label}</div>
+      <div class="vi-count">${count} 条记忆</div>
+    </div>`;
+  }).join("");
+}
+
+function renderCards(){
+  let filtered = memories;
+  if(activeCat !== "all") filtered = filtered.filter(m => m.cat === activeCat);
+  if(searchQuery){
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(m =>
+      m.title.toLowerCase().includes(q) ||
+      m.essence.toLowerCase().includes(q) ||
+      m.content.toLowerCase().includes(q)
+    );
+  }
+
+  document.getElementById("total-count").textContent = filtered.length;
+
+  const main = document.getElementById("cards");
+  const empty = document.getElementById("empty");
+
+  if(filtered.length === 0){
+    main.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+
+  main.innerHTML = filtered.map(m => {
+    const catInfo = CATEGORIES[m.cat];
+    return `<div class="card" data-cat="${m.cat}">
+      <div class="card-header">
+        <span class="card-emoji">${catInfo.emoji}</span>
+        <div class="card-title-area">
+          <div class="card-title">${m.title}</div>
+          <div class="card-essence">${m.essence}</div>
+        </div>
+        <span class="card-cat">${catInfo.label}</span>
+      </div>
+      <div class="card-body">${m.content}</div>
+    </div>`;
+  }).join("");
+}
+
+function filter(){
+  renderCards();
+  // Update active tab
+  document.querySelectorAll("#nav button").forEach(b =>
+    b.classList.toggle("active", b.dataset.cat === activeCat)
+  );
+}
+
+// ── Event Listeners ──
+document.getElementById("search").addEventListener("input", e => {
+  searchQuery = e.target.value.trim();
+  filter();
+});
+
+document.getElementById("nav").addEventListener("click", e => {
+  if(e.target.tagName === "BUTTON"){
+    activeCat = e.target.dataset.cat;
+    filter();
+  }
+});
+
+document.getElementById("visual-index").addEventListener("click", e => {
+  const card = e.target.closest(".vi-card");
+  if(card){
+    activeCat = card.dataset.cat;
+    filter();
+    // Scroll to cards
+    document.getElementById("cards").scrollIntoView({behavior:"smooth"});
+    // Update nav active
+    document.querySelectorAll("#nav button").forEach(b =>
+      b.classList.toggle("active", b.dataset.cat === activeCat)
+    );
+  }
+});
+
+// ── Init ──
+renderVisualIndex();
+renderCards();
+</script>
+</body>
+</html>
