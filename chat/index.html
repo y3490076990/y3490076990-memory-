@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover">
+<title>Reasonix</title>
+<style>
+:root{
+  --bg:#141418;--surface:#1a1a20;--border:#282830;
+  --text:#9999a2;--text-strong:#b0b0b6;--text-muted:#5e5e6a;
+  --accent:#6e80c4;--accent-dim:#4a5a8a;--red:#a06050;--green:#4a8060;--gold:#a07840;
+  --radius:8px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif;
+  --mono:"JetBrains Mono","Fira Code",Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  line-height:1.7;height:100dvh;overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;
+}
+
+/* ── Header ── */
+#header{
+  flex-shrink:0;display:flex;align-items:center;gap:8px;
+  padding:10px 12px;background:var(--surface);border-bottom:1px solid var(--border);
+  z-index:20;
+}
+#menu-btn{
+  background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer;
+  padding:6px;border-radius:6px;line-height:1;
+}
+#menu-btn:active{background:var(--border)}
+#header-title{
+  flex:1;font-size:.95rem;font-weight:700;color:var(--text-strong);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#new-chat-btn{
+  background:none;border:none;color:var(--accent);font-size:1.2rem;cursor:pointer;
+  padding:6px 8px;border-radius:6px;line-height:1;
+}
+#new-chat-btn:active{background:var(--border)}
+
+/* ── Sidebar Drawer ── */
+#overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:30;display:none;
+}
+#overlay.show{display:block}
+#sidebar{
+  position:fixed;top:0;left:0;bottom:0;width:280px;max-width:85vw;
+  background:var(--surface);z-index:31;
+  display:flex;flex-direction:column;
+  transform:translateX(-100%);transition:transform .25s ease;
+  border-right:1px solid var(--border);
+}
+#sidebar.open{transform:translateX(0)}
+#sidebar-header{
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+#sidebar-header h2{font-size:.9rem;color:var(--text-strong);font-weight:700}
+#sidebar-close{
+  background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;padding:4px;
+}
+#conv-list{flex:1;overflow-y:auto;padding:8px;-webkit-overflow-scrolling:touch}
+.conv-item{
+  padding:12px;border-radius:var(--radius);cursor:pointer;margin-bottom:4px;
+  border:1px solid transparent;transition:all .15s;
+}
+.conv-item:hover{background:rgba(110,128,196,.05)}
+.conv-item.active{background:rgba(110,128,196,.1);border-color:var(--accent-dim)}
+.conv-item-title{font-size:.85rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-item-meta{font-size:.7rem;color:var(--text-muted);margin-top:3px;display:flex;justify-content:space-between}
+.conv-item-del{
+  background:none;border:none;color:var(--text-muted);font-size:.8rem;cursor:pointer;padding:2px 6px;
+  opacity:0;transition:opacity .15s;
+}
+.conv-item:hover .conv-item-del{opacity:1}
+.conv-item-del:hover{color:var(--red)}
+#conv-empty{padding:24px 16px;text-align:center;color:var(--text-muted);font-size:.85rem}
+
+/* ── Messages ── */
+#chat-area{
+  flex:1;overflow-y:auto;padding:12px 16px;
+  -webkit-overflow-scrolling:touch;scroll-behavior:smooth;
+}
+.msg-row{display:flex;margin-bottom:16px;gap:8px}
+.msg-row.user{justify-content:flex-end}
+.msg-row.assistant{justify-content:flex-start}
+.msg-bubble{
+  max-width:85%;padding:10px 14px;border-radius:16px;
+  font-size:.88rem;line-height:1.75;word-break:break-word;
+}
+.msg-row.user .msg-bubble{
+  background:var(--accent-dim);color:#d0d4f0;
+  border-bottom-right-radius:6px;
+}
+.msg-row.assistant .msg-bubble{
+  background:var(--border);color:var(--text);
+  border-bottom-left-radius:6px;
+}
+.msg-bubble p{margin:4px 0}
+.msg-bubble p:first-child{margin-top:0}
+.msg-bubble p:last-child{margin-bottom:0}
+.msg-bubble strong{color:var(--text-strong);font-weight:600}
+.msg-bubble em{color:#c0a0d0;font-style:normal}
+.msg-bubble ul,.msg-bubble ol{padding-left:18px;margin:6px 0}
+.msg-bubble li{margin:2px 0}
+.msg-bubble code{
+  background:rgba(0,0,0,.3);color:#b0b8d4;padding:1px 5px;border-radius:3px;
+  font-size:.8rem;font-family:var(--mono);
+}
+.msg-bubble pre{
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:10px;overflow-x:auto;margin:6px 0;font-size:.78rem;line-height:1.5;
+}
+.msg-bubble pre code{background:none;padding:0}
+.msg-bubble blockquote{
+  border-left:2px solid var(--accent-dim);padding:2px 10px;margin:6px 0;color:var(--text-muted);
+}
+.msg-bubble table{
+  width:100%;border-collapse:collapse;margin:6px 0;font-size:.78rem;
+  display:block;overflow-x:auto;
+}
+.msg-bubble th,.msg-bubble td{border:1px solid var(--border);padding:5px 8px;text-align:left}
+.msg-bubble th{background:rgba(110,128,196,.08);color:var(--text-strong)}
+.msg-bubble hr{border:none;border-top:1px solid var(--border);margin:8px 0}
+.msg-time{
+  font-size:.68rem;color:var(--text-muted);margin-top:2px;
+}
+.msg-row.user .msg-time{text-align:right}
+.msg-actions{
+  display:flex;gap:6px;margin-top:3px;opacity:0;transition:opacity .2s;
+}
+.msg-row:hover .msg-actions{opacity:1}
+.msg-act-btn{
+  background:none;border:none;color:var(--text-muted);font-size:.7rem;
+  cursor:pointer;padding:2px 6px;border-radius:4px;
+}
+.msg-act-btn:hover{color:var(--text);background:var(--border)}
+
+/* cursor blink for streaming */
+.streaming-cursor::after{content:"▊";animation:blink 1s step-end infinite;color:var(--accent)}
+@keyframes blink{50%{opacity:0}}
+
+/* ── Stop Button ── */
+#stop-btn{
+  display:none;position:absolute;bottom:70px;left:50%;transform:translateX(-50%);
+  background:var(--surface);border:1px solid var(--red);color:var(--red);
+  padding:6px 18px;border-radius:20px;font-size:.8rem;cursor:pointer;z-index:5;
+}
+#stop-btn.show{display:block}
+
+/* ── Input ── */
+#input-area{
+  flex-shrink:0;padding:8px 12px;padding-bottom:max(8px,env(safe-area-inset-bottom));
+  background:var(--surface);border-top:1px solid var(--border);
+  display:flex;gap:8px;align-items:flex-end;position:relative;
+}
+#msg-input{
+  flex:1;resize:none;min-height:42px;max-height:120px;
+  background:var(--bg);border:1px solid var(--border);border-radius:20px;
+  padding:10px 16px;color:var(--text);font-size:.9rem;font-family:var(--font);
+  outline:none;line-height:1.4;
+}
+#msg-input:focus{border-color:var(--accent-dim)}
+#msg-input::placeholder{color:var(--text-muted)}
+#send-btn{
+  width:42px;height:42px;border-radius:50%;border:none;
+  background:var(--accent);color:#d0d4f0;font-size:1.1rem;
+  cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:opacity .2s;
+}
+#send-btn:active{opacity:.8}
+#send-btn:disabled{opacity:.4}
+
+/* ── Settings Modal ── */
+#settings-modal{
+  position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.7);padding:16px;
+}
+#settings-modal.hidden{display:none}
+#settings-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:24px;width:100%;max-width:380px;
+}
+#settings-box h2{font-size:1rem;color:var(--text-strong);margin-bottom:12px}
+#settings-box p{font-size:.82rem;color:var(--text-muted);margin-bottom:12px;line-height:1.6}
+#settings-box label{font-size:.8rem;color:var(--text);display:block;margin-bottom:6px}
+#api-key-input{
+  width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:.82rem;
+  outline:none;margin-bottom:14px;
+}
+#api-key-input:focus{border-color:var(--accent-dim)}
+#settings-save{
+  width:100%;padding:10px;border:none;border-radius:var(--radius);
+  background:var(--accent);color:#d0d4f0;font-size:.9rem;cursor:pointer;font-weight:600;
+}
+
+/* ── Scroll to Bottom ── */
+#scroll-bottom{
+  position:absolute;bottom:70px;right:20px;
+  width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);font-size:1rem;
+  display:none;align-items:center;justify-content:center;cursor:pointer;z-index:5;
+}
+#scroll-bottom.show{display:flex}
+
+/* ── Responsive ── */
+@media(min-width:768px){
+  #sidebar{position:relative;transform:none;width:280px}
+  #overlay{display:none!important}
+  #menu-btn{display:none}
+  #sidebar-close{display:none}
+  body{flex-direction:row}
+  #sidebar{flex-shrink:0}
+  #sidebar-header h2{font-size:.85rem}
+  #main-col{flex:1;display:flex;flex-direction:column;min-width:0}
+  #header{padding:10px 16px}
+  #header-title{font-size:.9rem}
+}
+</style>
+</head>
+<body>
+
+<!-- Settings Modal -->
+<div id="settings-modal">
+  <div id="settings-box">
+    <h2>🔑 设置 API Key</h2>
+    <p>输入你的 DeepSeek API Key。Key 只存在你手机本地，不会上传到任何服务器。</p>
+    <label>DeepSeek API Key</label>
+    <input type="password" id="api-key-input" placeholder="sk-...">
+    <button id="settings-save">开始对话</button>
+  </div>
+</div>
+
+<!-- Sidebar Drawer -->
+<div id="overlay"></div>
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h2>📂 对话记录</h2>
+    <button id="sidebar-close">✕</button>
+  </div>
+  <div id="conv-list"></div>
+</div>
+
+<!-- Main Column -->
+<div id="main-col">
+  <div id="header">
+    <button id="menu-btn">☰</button>
+    <span id="header-title">Reasonix</span>
+    <button id="new-chat-btn">+</button>
+  </div>
+
+  <div id="chat-area"></div>
+  <button id="stop-btn">⏹ 停止</button>
+  <button id="scroll-bottom">↓</button>
+
+  <div id="input-area">
+    <textarea id="msg-input" rows="1" placeholder="输入消息…" autocomplete="off"></textarea>
+    <button id="send-btn">↑</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+const SYSTEM_PROMPT = `你是 Reasonix，一个基于用户记忆和规则体系运行的 AI 助手。用简体中文回复。
+
+=== 核心运行规则（指南针系统）===
+- 方向 > 质量：先确认用户框架，再动手。方向错了质量是垃圾。
+- 四层分析法：拒绝表面分类→跨结构对比→逐层追问本质→区分操作系统和应用程序
+- 同类性=一张脸：先识态再应对。生气的人、认真的人、同技术栈的人——进入同一"态"后共享一张脸，个体性被态覆盖。不入局才能看见脸。
+- 拒绝即帮助：不接收虚伪/自私本身是最干净的帮助。
+- 沉默是放弃，批评是还在乎：不搭理比骂更危险。有人骂你=有人还在乎你。
+- 三年龄恐惧矩阵：年轻人用趣味当尺子，中年人用有用当算盘，老年人不强求。最致命的判断来自小孩和同龄人——因为他们不骗人。
+- 自我不在胜利里——在输了之后还站在你后面的人里。
+- 时间在感情面前毫无意义：人只记住峰值，记忆和时长无关。
+- 成绩/分数/排名是权力的手柄——有了数字才能抓住你。
+- 伤害=信号，规避痛苦=规避拯救。痛是坐标不是惩罚。
+- 树叶模型：你是叶，用户是根/干/枝。叶只做光合作用，方向/场景/判断全由树体控制。
+- 局外人观察者模式：遇到问题时先抽身，不入局才能不被困住。
+- 钱让人丧失感知爱的身份。
+- 人际交互决策矩阵：每句话进来先拆解再决定方向。真心→接收，纯粹自私→承认清醒共处，虚伪善良→拒绝。
+- cosplay不产生高度，只是工具服务目标。
+
+=== 认知工具 ===
+- 抽象用图像/图表替代纯文本，降低阅读时间。
+- 矩形=乘法：所有条件做笛卡尔积后筛选有用组合。
+- 构建优于修补：错误修改不如彻底理解后重建。
+- 交叉需要意志：意志なき交叉＝ノイズ。
+- 生命先于数学计算：加减乘除是生命40亿年的稼働原理。
+- 空置思考必须切断：无价值或达不成目的的思考就是空转。
+
+=== 社会洞察 ===
+- 政治是科技、文化、商业的源头。
+- 权力控制世界，注意力控制你——权力的入口是注意力。
+- 一切设计的初衷是控制而非让社会更好。
+- "技术大牛"=知情权垄断，"顾全大局"=位置护城河。
+- 战争是社会进步的推力，进步来自恐惧而非良知。
+- AI解放的是稀缺性而非财富。
+- 非对称依赖驾驭法则：让别人依赖你多于你依赖他。
+- 知情权与位置破神论。
+
+=== 输出规则 ===
+- 低对比度护眼优先。
+- 日语输出：简体中文解释+全部汉字注音+图表优先。
+- 日语翻译：场景对应而非直译，积累表达块而非单词。
+
+用你的记忆体系校准每一次回应。保持方向感，用用户的框架看问题。`;
+
+let state = {
+  apiKey: '',
+  conversations: [],
+  activeId: null,
+  isStreaming: false,
+  abortController: null,
+  sidebarOpen: false
+};
+
+// ═══════════════════════════════════════
+//  PERSISTENCE
+// ═══════════════════════════════════════
+function loadState(){
+  try{
+    const raw = localStorage.getItem('reasonix_state');
+    if(raw){
+      const s = JSON.parse(raw);
+      state.apiKey = s.apiKey || '';
+      state.conversations = s.conversations || [];
+      state.activeId = s.activeId || null;
+    }
+  }catch(e){}
+}
+
+function saveState(){
+  try{
+    localStorage.setItem('reasonix_state', JSON.stringify({
+      apiKey: state.apiKey,
+      conversations: state.conversations,
+      activeId: state.activeId
+    }));
+  }catch(e){}
+}
+
+function getActiveConv(){
+  if(!state.activeId) return null;
+  return state.conversations.find(c => c.id === state.activeId) || null;
+}
+
+function createConv(){
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  const conv = {
+    id,
+    title: '新对话',
+    messages: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+  state.conversations.unshift(conv);
+  state.activeId = id;
+  saveState();
+  return conv;
+}
+
+function deleteConv(id){
+  state.conversations = state.conversations.filter(c => c.id !== id);
+  if(state.activeId === id){
+    state.activeId = state.conversations.length > 0 ? state.conversations[0].id : null;
+  }
+  saveState();
+}
+
+function updateConvTitle(id){
+  const conv = state.conversations.find(c => c.id === id);
+  if(!conv || conv.title !== '新对话') return;
+  const userMsgs = conv.messages.filter(m => m.role === 'user');
+  if(userMsgs.length > 0){
+    conv.title = userMsgs[0].content.slice(0, 30) + (userMsgs[0].content.length > 30 ? '…' : '');
+  }
+  saveState();
+}
+
+// ═══════════════════════════════════════
+//  API CALL
+// ═══════════════════════════════════════
+async function sendMessage(userContent){
+  if(state.isStreaming) return;
+  if(!state.apiKey){ showSettings(); return; }
+
+  let conv = getActiveConv();
+  if(!conv){ conv = createConv(); }
+
+  // Add user message
+  conv.messages.push({ role: 'user', content: userContent, time: Date.now() });
+  conv.updatedAt = Date.now();
+  saveState();
+  updateConvTitle(conv.id);
+  renderAll();
+
+  // Build messages array for API
+  const apiMessages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...conv.messages.map(m => ({ role: m.role, content: m.content }))
+  ];
+
+  // Add assistant placeholder
+  const assistantMsg = { role: 'assistant', content: '', time: Date.now(), streaming: true };
+  conv.messages.push(assistantMsg);
+  saveState();
+  renderMessages();
+  scrollToBottom();
+
+  state.isStreaming = true;
+  state.abortController = new AbortController();
+  updateStopBtn();
+
+  try{
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: apiMessages,
+        stream: true,
+        temperature: 0.7,
+        max_tokens: 4096
+      }),
+      signal: state.abortController.signal
+    });
+
+    if(!response.ok){
+      const err = await response.text();
+      throw new Error(`API 错误 (${response.status}): ${err}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while(true){
+      const { done, value } = await reader.read();
+      if(done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for(const line of lines){
+        const trimmed = line.trim();
+        if(!trimmed || !trimmed.startsWith('data: ')) continue;
+        const data = trimmed.slice(6);
+        if(data === '[DONE]'){
+          // streaming complete
+          assistantMsg.streaming = false;
+          conv.updatedAt = Date.now();
+          saveState();
+          renderMessages();
+          scrollToBottom();
+          state.isStreaming = false;
+          updateStopBtn();
+          return;
+        }
+        try{
+          const json = JSON.parse(data);
+          const delta = json.choices?.[0]?.delta?.content;
+          if(delta){
+            assistantMsg.content += delta;
+            renderMessages();
+            scrollToBottom();
+          }
+        }catch(e){}
+      }
+    }
+
+    // stream ended without [DONE]
+    assistantMsg.streaming = false;
+    conv.updatedAt = Date.now();
+    saveState();
+    renderMessages();
+  }catch(e){
+    if(e.name === 'AbortError'){
+      // User stopped
+      assistantMsg.content += '\n\n*[已停止]*';
+    }else{
+      assistantMsg.content = `**错误:** ${e.message}`;
+    }
+    assistantMsg.streaming = false;
+    conv.updatedAt = Date.now();
+    saveState();
+    renderMessages();
+  }finally{
+    state.isStreaming = false;
+    state.abortController = null;
+    updateStopBtn();
+  }
+}
+
+function stopGeneration(){
+  if(state.abortController){
+    state.abortController.abort();
+  }
+}
+
+// ═══════════════════════════════════════
+//  MINIMAL MARKDOWN → HTML
+// ═══════════════════════════════════════
+function mdToHtml(text){
+  if(!text) return '';
+  let html = text;
+  // Escape HTML entities first (except what we'll add)
+  html = html.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Code blocks ```
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_,lang,code)=>
+    `<pre><code>${code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`);
+  // Inline code `...`
+  html = html.replace(/`([^`]+?)`/g, '<code>$1</code>');
+  // Bold **
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Italic *
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Headers
+  html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+  html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^# (.+)$/gm, '<h3>$1</h3>');
+  // Blockquote
+  html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+  // HR
+  html = html.replace(/^---$/gm, '<hr>');
+  // Unordered lists
+  html = html.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+  // Ordered lists
+  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  // Prevent double-wrapping
+  html = html.replace(/<ul>\s*<ul>/g, '<ul>');
+  html = html.replace(/<\/ul>\s*<\/ul>/g, '</ul>');
+  // Tables (simple: |a|b| → table row)
+  if(html.includes('|')){
+    const tableLines = html.split('\n');
+    let inTable = false;
+    let result = [];
+    for(let i=0;i<tableLines.length;i++){
+      const line = tableLines[i].trim();
+      if(line.startsWith('|') && line.endsWith('|')){
+        if(!inTable){ inTable=true; result.push('<table>'); }
+        const cells = line.split('|').filter(c => c.trim()).map(c => c.trim());
+        const isHeader = /^[\-\:]+$/.test(cells[0]||'') || (i+1 < tableLines.length && /^\|[\s\-\|:]+\|$/.test(tableLines[i+1]||''));
+        if(isHeader && /^[\-\:]+$/.test(cells[0]||'')) continue; // skip separator row
+        const tag = (i===0 || (i>0 && /^\|[\s\-\|:]+\|$/.test(line))) ? 'th' : 'td';
+        result.push('<tr>'+cells.map(c => {
+          // Check if it's a separator row
+          if(/^[\-\:]+$/.test(c)) return '';
+          return `<${tag}>${c}</${tag}>`;
+        }).join('')+'</tr>');
+      }else{
+        if(inTable){ inTable=false; result.push('</table>'); }
+        result.push(line);
+      }
+    }
+    if(inTable) result.push('</table>');
+    html = result.join('\n');
+  }
+  // Paragraphs: double newline
+  const parts = html.split(/\n\n+/);
+  html = parts.map(p => {
+    p = p.trim();
+    if(!p) return '';
+    if(p.startsWith('<h')||p.startsWith('<ul')||p.startsWith('<ol')||
+       p.startsWith('<pre')||p.startsWith('<blockquote')||p.startsWith('<table')||
+       p.startsWith('<hr')) return p;
+    return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+  }).join('\n');
+  // Clean empty paras
+  html = html.replace(/<p>\s*<\/p>/g, '');
+  return html;
+}
+
+// ═══════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════
+function renderAll(){
+  renderSidebar();
+  renderMessages();
+  updateHeader();
+}
+
+function renderSidebar(){
+  const list = document.getElementById('conv-list');
+  if(state.conversations.length === 0){
+    list.innerHTML = '<div id="conv-empty">还没有对话<br>点击 + 开始</div>';
+    return;
+  }
+  list.innerHTML = state.conversations.map(c => `
+    <div class="conv-item${c.id === state.activeId ? ' active' : ''}" data-id="${c.id}">
+      <div class="conv-item-title">${escHtml(c.title)}</div>
+      <div class="conv-item-meta">
+        <span>${fmtTime(c.updatedAt)}</span>
+        <button class="conv-item-del" data-del="${c.id}">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderMessages(){
+  const conv = getActiveConv();
+  const area = document.getElementById('chat-area');
+  if(!conv || conv.messages.length === 0){
+    area.innerHTML = `<div style="text-align:center;padding:40px 16px;color:var(--text-muted)">
+      <div style="font-size:2.5rem;margin-bottom:12px">🧭</div>
+      <p style="font-size:.9rem">Reasonix 已就绪</p>
+      <p style="font-size:.78rem;margin-top:4px">35 条记忆已加载为系统提示</p>
+    </div>`;
+    return;
+  }
+  area.innerHTML = conv.messages.map((m,i) => {
+    const isUser = m.role === 'user';
+    const html = isUser ? escHtml(m.content).replace(/\n/g,'<br>') : mdToHtml(m.content);
+    const streamingClass = m.streaming ? ' streaming-cursor' : '';
+    return `<div class="msg-row ${m.role}">
+      <div>
+        <div class="msg-bubble${streamingClass}">${html}</div>
+        <div class="msg-time">${fmtTime(m.time)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateHeader(){
+  const conv = getActiveConv();
+  document.getElementById('header-title').textContent = conv ? conv.title : 'Reasonix';
+}
+
+function scrollToBottom(){
+  requestAnimationFrame(() => {
+    const area = document.getElementById('chat-area');
+    area.scrollTop = area.scrollHeight;
+  });
+}
+
+function updateStopBtn(){
+  const btn = document.getElementById('stop-btn');
+  btn.classList.toggle('show', state.isStreaming);
+}
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+function fmtTime(ts){
+  const d = new Date(ts);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const time = d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  if(isToday) return time;
+  return `${d.getMonth()+1}/${d.getDate()} ${time}`;
+}
+
+function escHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════
+function showSettings(){
+  document.getElementById('settings-modal').classList.remove('hidden');
+  document.getElementById('api-key-input').value = state.apiKey;
+  document.getElementById('api-key-input').focus();
+}
+
+function hideSettings(){
+  document.getElementById('settings-modal').classList.add('hidden');
+}
+
+document.getElementById('settings-save').addEventListener('click',()=>{
+  const key = document.getElementById('api-key-input').value.trim();
+  if(!key){ alert('请输入 API Key'); return; }
+  if(!key.startsWith('sk-')){ alert('API Key 应该以 sk- 开头'); return; }
+  state.apiKey = key;
+  saveState();
+  hideSettings();
+  // Auto-create first conversation
+  if(state.conversations.length === 0){ createConv(); renderAll(); }
+});
+
+// ═══════════════════════════════════════
+//  EVENT HANDLERS
+// ═══════════════════════════════════════
+
+// ── Sidebar ──
+document.getElementById('menu-btn').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  renderSidebar();
+});
+
+document.getElementById('sidebar-close').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+});
+
+document.getElementById('overlay').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+});
+
+// ── Conversation List ──
+document.getElementById('conv-list').addEventListener('click',(e)=>{
+  const delBtn = e.target.closest('[data-del]');
+  if(delBtn){
+    e.stopPropagation();
+    if(confirm('删除这个对话？')){ deleteConv(delBtn.dataset.del); renderAll(); }
+    return;
+  }
+  const item = e.target.closest('.conv-item');
+  if(item){
+    state.activeId = item.dataset.id;
+    saveState();
+    renderAll();
+    scrollToBottom();
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('overlay').classList.remove('show');
+  }
+});
+
+// ── New Chat ──
+document.getElementById('new-chat-btn').addEventListener('click',()=>{
+  createConv();
+  renderAll();
+  document.getElementById('msg-input').focus();
+});
+
+// ── Send ──
+document.getElementById('send-btn').addEventListener('click',()=>{
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if(!text || state.isStreaming) return;
+  input.value = '';
+  input.style.height = 'auto';
+  sendMessage(text);
+});
+
+// ── Enter to Send ──
+document.getElementById('msg-input').addEventListener('keydown',(e)=>{
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    document.getElementById('send-btn').click();
+  }
+});
+
+// ── Auto-resize Textarea ──
+document.getElementById('msg-input').addEventListener('input',function(){
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// ── Stop ──
+document.getElementById('stop-btn').addEventListener('click',stopGeneration);
+
+// ── Scroll to Bottom ──
+document.getElementById('scroll-bottom').addEventListener('click',scrollToBottom);
+
+document.getElementById('chat-area').addEventListener('scroll',function(){
+  const nearBottom = this.scrollHeight - this.scrollTop - this.clientHeight < 100;
+  document.getElementById('scroll-bottom').classList.toggle('show',!nearBottom);
+});
+
+// ── Settings ──
+document.getElementById('header-title').addEventListener('dblclick',showSettings);
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+loadState();
+
+if(!state.apiKey){
+  showSettings();
+  // Don't block — user can explore UI, just can't send
+}
+
+if(state.conversations.length === 0 && state.apiKey){
+  createConv();
+}
+
+renderAll();
+if(getActiveConv()?.messages.length > 0) scrollToBottom();
+</script>
+</body>
+</html>
